@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XACRIFIZEE_ | Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap');
+        
+        body {
+            margin: 0; background: #050505; color: #fff;
+            font-family: 'Inter', sans-serif; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            background-image: radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        .dashboard {
+            width: 900px; max-width: 95%; background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px; padding: 40px; box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h1 { margin: 0; font-weight: 900; letter-spacing: -1px; font-size: 28px; }
+
+        .status-container {
+            display: flex; align-items: center; gap: 12px;
+            background: #000; padding: 10px 20px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #ff4757; box-shadow: 0 0 15px #ff4757; transition: 0.3s;
+        }
+
+        .dot.online { background: #2ed573; box-shadow: 0 0 15px #2ed573; }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+
+        button {
+            padding: 16px; border: none; border-radius: 15px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; font-size: 14px; text-transform: uppercase;
+        }
+
+        #join-btn { background: #fff; color: #000; }
+        #leave-btn { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+        button:hover { transform: translateY(-3px); filter: brightness(1.2); }
+
+        .console {
+            background: #000; border-radius: 20px; padding: 20px; height: 350px;
+            overflow-y: auto; font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; border: 1px solid rgba(255,255,255,0.05); color: #ccc;
+        }
+
+        .chat-box { display: flex; gap: 10px; margin-top: 20px; }
+        input {
+            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px; border-radius: 15px; color: #fff; outline: none;
+        }
+        input:focus { border-color: #3b82f6; }
+
+        #send-btn { background: #3b82f6; color: #fff; padding: 0 30px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <header>
+        <h1>XACRIFIZEE_ <span style="opacity:0.3">/</span> BOT</h1>
+        <div class="status-container">
+            <div id="status-dot" class="dot"></div>
+            <span id="status-text" style="font-size: 12px; font-weight: 700;">OFFLINE</span>
+        </div>
+    </header>
+
+    <div class="controls">
+        <button id="join-btn">Initialize Bot</button>
+        <button id="leave-btn">Kill Process</button>
+    </div>
+
+    <div class="console" id="console">
+        <div>> System Ready. Waiting for command...</div>
+    </div>
+
+    <div class="chat-box">
+        <input type="text" id="chat-msg" placeholder="Type a message to the server...">
+        <button id="send-btn">SEND</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    const consoleDiv = document.getElementById('console');
+    const dot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+
+    socket.on('status_update', (isOnline) => {
+        if(isOnline) {
+            dot.classList.add('online');
+            statusText.textContent = "ONLINE";
+            statusText.style.color = "#2ed573";
+        } else {
+            dot.classList.remove('online');
+            statusText.textContent = "OFFLINE";
+            statusText.style.color = "#ff4757";
+        }
+    });
+
+    socket.on('console_log', (msg) => {
+        const line = document.createElement('div');
+        line.style.marginBottom = "5px";
+        line.innerHTML = `> ${msg}`;
+        consoleDiv.appendChild(line);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    });
+
+    document.getElementById('join-btn').onclick = () => socket.emit('join');
+    document.getElementById('leave-btn').onclick = () => socket.emit('leave');
+    
+    function sendMessage() {
+        const input = document.getElementById('chat-msg');
+        if(input.value) {
+            socket.emit('send_message', input.value);
+            input.value = '';
+        }
+    }
+
+    document.getElementById('send-btn').onclick = sendMessage;
+    document.getElementById('chat-msg').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
+</script>
+
+</body>
+</html>
